@@ -7,10 +7,10 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
 
-
 public class SceneReader {
 
-    public static final String filePath = "src/male-liquorst.txt.json";
+    //public static final String filePath = "src/male-liquorst.txt.json";
+    public static final String filePath = "src/male-animal.txt.json";
 
     public static void main(String[] args) {
         Scanner input = new Scanner(System.in);
@@ -25,7 +25,7 @@ public class SceneReader {
         }
     }
 
-    private static void scenePresent(JSONArray lines, int lineNumber) throws IOException, ParseException {
+    /*private static void scenePresent(JSONArray lines, int lineNumber) throws IOException, ParseException {
         boolean lineNumberReached = false;
         int currentLineNumber = 0;
 
@@ -48,30 +48,165 @@ public class SceneReader {
                     break;
                 } else if (line.startsWith("*choice action")) {
                     break;
-                } else if (line.startsWith("*temp random")){
+                } else if (line.startsWith("*temp")){
                     decisionTempMaker(lines);
                     break;
                 }
                 System.out.println(line);
             }
         }
+    }*/
+    private static void scenePresent(JSONArray lines, int lineNumber) throws IOException, ParseException {
+        boolean lineNumberReached = false;
+        int currentLineNumber = 0;
+        List<String> processedLines = new ArrayList<>();
+
+        for (Object lineObj : lines) {
+            String line = (String) lineObj;
+            currentLineNumber++;
+
+            // Skip lines until reaching the specified lineNumber
+            if (!lineNumberReached) {
+                if (currentLineNumber > lineNumber) {
+                    lineNumberReached = true;
+                }
+            }
+
+            // Start displaying lines only after lineNumberReached is true
+            if (lineNumberReached) {
+                if (line.startsWith("*choice mood action")) {
+                    decisionMAMaker(convertListToJSONArray(lines.subList(currentLineNumber, lines.size())));
+                    break;
+                } else if (line.startsWith("*choice")) {
+                    decisionAMaker(convertListToJSONArray(lines.subList(currentLineNumber, lines.size())));
+                    break;
+                } else if (line.startsWith("*temp")) {
+                    decisionTempMaker(convertListToJSONArray(lines.subList(currentLineNumber, lines.size())));
+                    break;
+                } else if (line.startsWith("*finish")){
+                    System.out.println("This scenario is finished. Move on to the next");
+                    break;
+                } else if (line.startsWith("*set")){
+                    statUpdater(convertListToJSONArray(lines.subList(currentLineNumber, lines.size())), line);
+                } else if (line.startsWith("*goto")){
+                    //System.out.println(line.substring(6));
+                    int labelLine = labelFinder(line.substring(1)); //substring removes a character so "*goto AFTER" is accepted, might need tweaking for other cases
+                    scenePresent(lines, labelLine);
+                    break;
+                }
+
+
+                System.out.println(line);
+                processedLines.add(line);
+            }
+        }
     }
 
+    private static void statUpdater(JSONArray remainingLines, String currentLine) {
+        String statToUpdate = currentLine.substring(5, 7);
 
-
-
-    private static void decisionTempMaker(JSONArray remainingLines) throws IOException, ParseException{
-        int optionAmount;
-        for (Object lineObj : remainingLines) {
-            String line = (String) lineObj;
-            //System.out.println("Checking if line is included. decisionTempMaker starts here");
-            System.out.println(line);
-
+        if (statToUpdate == "F?"){
+            statToUpdate = "familial";
+        }else if (statToUpdate == "IN"){
+            statToUpdate = "intellectual";
+        }else if (statToUpdate == "PH"){
+            statToUpdate = "physical";
+        }else if (statToUpdate == "s?"){
+            statToUpdate = "social";
+        }else if (statToUpdate == "v?"){
+            statToUpdate = "vocational";
+        }else if (statToUpdate == ""){
+            statToUpdate = "intellectual";
         }
 
+
     }
 
+    private static JSONArray convertListToJSONArray(List<String> list) {
+        JSONArray jsonArray = new JSONArray();
+        jsonArray.addAll(list);
+        return jsonArray;
+    }
 
+    private static void decisionTempMaker(JSONArray remainingLines) throws IOException, ParseException{
+        Scanner input = new Scanner(System.in);
+        // Array to store the labels of the different outcomes.
+        ArrayList<String> labelResults = new ArrayList<>();
+        int decisionMade = 1;
+        System.out.println("This decision is made by chance");
+        for (Object lineObj : remainingLines) {
+            String line = (String) lineObj;
+            if (line.startsWith("*label")){
+                break;
+            }
+            if (line.startsWith("*rand")){
+                int rangeVal = Integer.parseInt(line.substring(line.length() - 1));
+                decisionMade = tempValConditionHandler(1,rangeVal);
+            }
+            if (line.startsWith("  *go")){
+                labelResults.add(line.substring(8));
+                System.out.println(line.substring(8));
+            }
+        }
+        String label = labelResults.get(2);
+        System.out.println("Loop Ended");
+        int goToLine = getNumberForLabel(label);
+        JSONArray lines = readLines(filePath);
+        scenePresent(lines, goToLine);
+    }
+
+    private static void decisionAMaker(JSONArray remainingLines) throws IOException, ParseException {
+        Scanner input = new Scanner(System.in);
+        // Array to store actions
+        ArrayList<String> Actions = new ArrayList<>();
+        ArrayList<String> gotoArray = new ArrayList<>();
+
+        System.out.println("\nTime to choose an action");
+
+        for (Object lineObj : remainingLines) {
+            String line = (String) lineObj;
+
+            // If the line starts with *label, end the loop
+            if (line.startsWith("*label")) {
+                break;
+            }
+            // If the line starts with "    #", add it to the actActions array
+            if (line.startsWith("  #")) {
+                Actions.add(line.substring(3)); // Remove the leading spaces
+            }
+            // If the line starts with "      *goto" add it to the gotoArray array
+            if (line.startsWith("    *goto")) {
+                gotoArray.add(line.substring(5));
+            }
+        }
+
+        boolean decisionMade = false;
+        String gotoLine = "";
+        // Display the action options
+        while (!decisionMade) {
+            System.out.println("\nActions:");
+            for (String action : Actions) {
+                System.out.println("  " + action);
+            }
+            System.out.println("Choose an action");
+            int act = input.nextInt();
+            //Checks the right combination of actions are chosen
+            //Needs replacing with proper input checking system
+
+            if (act <= Actions.size()) {
+                System.out.println("Valid Action chosen");
+                gotoLine = gotoArray.get(act - 1);
+                decisionMade = true;
+            }
+
+
+        }
+        System.out.println(gotoLine);
+        JSONArray lines = readLines(filePath);
+        int newLineBegin = labelFinder(gotoLine);
+        System.out.println(newLineBegin);
+        scenePresent(lines, newLineBegin);
+    }
 
     private static void decisionMAMaker(JSONArray remainingLines) throws IOException, ParseException {
         Scanner input = new Scanner(System.in);
@@ -131,6 +266,7 @@ public class SceneReader {
         System.out.println(gotoLine);
         JSONArray lines = readLines(filePath);
         int newLineBegin = labelFinder(gotoLine);
+        System.out.println(newLineBegin);
         scenePresent(lines, newLineBegin);
     }
 
@@ -151,8 +287,6 @@ public class SceneReader {
         }
         return 0;
     }
-    private static final String JSON_DATA = "{\"crc\":-1299289936,\"lines\":[\"You are still much too young to buy liquor, but your friends want to \\\"get wasted\\\" tonight. They plan on waiting outside of the liquor store and asking older customers to buy it for them.\",\"*choice mood action\",\" #EXCITED/INTERESTED\",\"   #JOIN THEM/GET READY TO PARTY\",\"     *goto A11\",\" #NOT INTERESTED\",\"   #FIND SOMETHING ELSE TO DO\",\"     *goto A22\",\"*label A11\",\"*temp randomB\",\"*rand randomB 1 3\",\"*if randomB=1\",\"  *goto B1\",\"*elseif randomB=2\",\"  *goto B2\",\"*else\",\"  *goto B3\",\"*label B1\",\"*set PH%-10\",\"*set IN%-10\",\"A young adult about four years older than you agrees to buy the liquor. He picks out a cherry flavored cordial that you and your friends drink from the bottle. You get \\\"buzzed\\\" and a little rowdy. Later that evening, you lie\",\"down in bed and everything starts to spin.\",\"*page_break\",\"Suddenly, you feel ill. You head for the bathroom, but the door is locked. Someone's in there. BLEAAAAAACH! You throw up red liquid all over the floor. At that moment, your dad comes out of the bathroom. He lets you sleep it off\",\"until morning.\",\"*finish\",\"*label B2\",\"Almost everyone refuses to make the purchase for you. Eventually you give up and find something else to do.\",\"*finish\",\"*label B3\",\"*set TH%-20\",\"*set IN%-10\",\"A middle-aged man with a square jaw looks at you sternly, then asks you what kind of liquor you want to drink. Please choose:\",\"\",\"\",\"Select an action:\",\"\",\"*choice\",\" #BEER\",\"   *goto C1\",\" #WINE\",\"   *goto C2\",\" #HARD LIQUOR\",\"   *goto C3\",\"*label C1\",\"*set OH+1\",\"*goto AFTER\",\"*label C2\",\"*set OH+1\",\"*goto AFTER\",\"*label C3\",\"*set OH+3\",\"*set FM%-20\",\"*set CA%-30\",\"*set TH%-20\",\"*label AFTER\",\"After a long time, the man emerges from the store and reaches into his jacket. He retrieves a small, leather pouch and flips it open. \\\"I am a police officer, boys, and you are violating the law by asking me to purchase liquor for you.\\\"\",\"*page_break\",\"Within minutes a squad car arrives. You are all driven home. Your parents are embarrassed and angry. Familial relationships decline.\",\"*finish\",\"*label A22\",\"*set IN%+20\",\"*set PH%+30\",\"You don't seem to be interested in this kind of experience right now. Intellectual and Physical spheres rise.\",\"*finish\",\"\",\"\"],\"labels\":{\"a11\":12,\"b1\":21,\"b2\":30,\"b3\":33,\"c1\":48,\"c2\":51,\"c3\":54,\"after\":59,\"a22\":64}}";
-
 
     public static JSONArray readLines(String filePath) throws IOException, ParseException {
         // Create a JSON parser
@@ -193,8 +327,6 @@ public class SceneReader {
         int range = high - low + 1;
         int randomNumber = random.nextInt(range) + low;
         return randomNumber;
-
-
     }
 
     public static void removeLine(JSONArray lines, int numEntriesToRemove) {

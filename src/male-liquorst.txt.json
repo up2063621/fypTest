@@ -18,7 +18,10 @@
   "*label B1",
   "*set PH%-10",
   "*set IN%-10",
-  "A young adult about four years older than you agrees to buy the liquor. He picks out a cherry flavored cordial that you and your friends drink from the bottle. You get \"buzzed\" and a little rowdy. Later that evening, you lie","down in bed and everything starts to spin.","*page_break","Suddenly, you feel ill. You head for the bathroom, but the door is locked. Someone's in there. BLEAAAAAACH! You throw up red liquid all over the floor. At that moment, your dad comes out of the bathroom. He lets you sleep it off",
+  "A young adult about four years older than you agrees to buy the liquor. He picks out a cherry flavored cordial that you and your friends drink from the bottle. You get \"buzzed\" and a little rowdy. Later that evening, you lie",
+  "down in bed and everything starts to spin.",
+  "*page_break",
+  "Suddenly, you feel ill. You head for the bathroom, but the door is locked. Someone's in there. BLEAAAAAACH! You throw up red liquid all over the floor. At that moment, your dad comes out of the bathroom. He lets you sleep it off",
   "until morning.",
   "*finish",
   "*label B2",
@@ -50,6 +53,7 @@
   "*set FM%-20",
   "*set CA%-30",
   "*set TH%-20",
+  "*goto AFTER",
   "*label AFTER",
   "After a long time, the man emerges from the store and reaches into his jacket. He retrieves a small, leather pouch and flips it open. \"I am a police officer, boys, and you are violating the law by asking me to purchase liquor for you.\"",
   "*page_break",
@@ -62,4 +66,4 @@
   "*finish",
   "",
   ""],
-  "labels":{"a11":10,"b1":21,"b2":30,"b3":33,"c1":48,"c2":51,"c3":54,"after":59,"a22":64}}
+  "labels":{"a11":9,"b1":18,"b2":27,"b3":30,"c1":48,"c2":48,"c3":51,"after":57,"a22":61}}
